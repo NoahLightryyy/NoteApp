@@ -144,15 +144,15 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "")
         password = request.form.get("password", "")
-        # Flaw #8: SQL injection. Query built by string concatenation, no params.
+        # Keep user input separate from SQL syntax with bound parameters.
         query = (
             "SELECT id, username, role FROM users "
-            "WHERE username = '" + username + "' AND password = '" + password + "'"
+            "WHERE username = %s AND password = %s"
         )
         conn = get_db()
         cur = conn.cursor()
         try:
-            cur.execute(query)
+            cur.execute(query, (username, password))
             row = cur.fetchone()
         except Exception as e:
             # Keep the raw error visible - helps the SQLi session.
@@ -211,8 +211,8 @@ def api_notes(note_id):
         "SELECT n.id, n.student_id, n.class_id, n.grade, n.comment, "
         "u.username AS student, c.name AS class_name "
         "FROM notes n JOIN users u ON u.id = n.student_id "
-        "JOIN classes c ON c.id = n.class_id WHERE n.id = %s",
-        (note_id,),
+        "JOIN classes c ON c.id = n.class_id WHERE n.id = %s AND (n.student_id = %s OR %s IN (SELECT teacher_id FROM classes WHERE id = n.class_id))",
+        (note_id, ident["user_id"], ident["user_id"]),
     )
     note = cur.fetchone()
     conn.close()
@@ -258,15 +258,21 @@ def grades():
     cur = conn.cursor()
     if note_id:
         cur.execute(
-            "UPDATE notes SET grade = %s, comment = %s WHERE id = %s",
-            (grade, comment, note_id),
+            "UPDATE notes SET grade = %s, comment = %s "
+            "WHERE id = %s AND class_id IN "
+            "(SELECT id FROM classes WHERE teacher_id = %s)",
+            (grade, comment, note_id, session["user_id"]),
         )
     else:
         cur.execute(
             "INSERT INTO notes (student_id, class_id, grade, comment) "
-            "VALUES (%s, %s, %s, %s)",
-            (student_id, class_id, grade, comment),
+            "SELECT %s, c.id, %s, %s FROM classes c "
+            "WHERE c.id = %s AND c.teacher_id = %s",
+            (student_id, grade, comment, class_id, session["user_id"]),
         )
+    if cur.rowcount == 0:
+        conn.close()
+        return jsonify({"error": "forbidden"}), 403
     conn.close()
     log(f"grade write by {session.get('username')} note_id={note_id or 'new'}")
     return redirect(url_for("teacher"))
