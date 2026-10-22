@@ -13,7 +13,7 @@ import base64
 import hashlib
 import subprocess
 
-from password_security import hash_password, verify_password, hasher, migrate_passwords
+from password_security import hash_password, verify_password, hasher
 
 import psycopg2
 import psycopg2.extras
@@ -152,12 +152,21 @@ def login():
             cur.execute("SELECT id, username, role, password FROM users WHERE username = %s",
                         (username,))
             row = cur.fetchone()
-            if row and verify_password(row["password"], password):
-                if hasher.check_needs_rehash(row["password"]):
+            if row:
+                stored = row["password"]
+                if stored.startswith("$argon2"):
+                    authenticated = verify_password(stored, password)
+                    needs_upgrade = authenticated and hasher.check_needs_rehash(stored)
+                else:
+                    # Legacy accounts are upgraded only after a correct login.
+                    authenticated = stored == password
+                    needs_upgrade = authenticated
+                if not authenticated:
+                    row = None
+                elif needs_upgrade:
                     cur.execute("UPDATE users SET password = %s WHERE id = %s AND password = %s",
-                                (hash_password(password), row["id"], row["password"]))
-            else:
-                row = None
+                                (hash_password(password), row["id"], stored))
+                    log(f"upgraded {row['username']} to argon2")
         finally:
             cur.close()
             conn.close()
@@ -398,6 +407,5 @@ def healthz():
 
 
 if __name__ == "__main__":
-    print(f"Migrated {migrate_passwords(get_db)} legacy passwords to Argon2id.")
     # Plain HTTP on purpose (flaw #3). Nginx + TLS is added in a later lab.
     app.run(host="0.0.0.0", port=5000, debug=True)

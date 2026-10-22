@@ -2,9 +2,8 @@
 from contextlib import closing
 from uuid import uuid4
 from argon2 import PasswordHasher, Type
-from argon2.exceptions import InvalidHashError
 from app import app, get_db
-from password_security import hash_password, verify_password, hasher, migrate_passwords
+from password_security import hash_password, verify_password, hasher
 
 
 def query(sql, params=(), fetch=False):
@@ -26,10 +25,6 @@ prefix = 'argon_test_' + uuid4().hex
 names = [prefix + suffix for suffix in ('legacy', 'broken', 'created', 'old')]
 secret = "test-'密碼-123"
 try:
-    initial = snapshot()
-    assert all(row['password'].startswith('$argon2id$') for row in initial)
-    assert migrate_passwords(get_db) == 0
-    assert snapshot() == initial
     first, second = hash_password(secret), hash_password(secret)
     assert first != second and verify_password(first, secret)
     assert not verify_password(first, 'wrong')
@@ -38,20 +33,10 @@ try:
     for name, password in zip(names[:2], [secret, '$argon2id$broken']):
         query('INSERT INTO users(username,password,role) VALUES(%s,%s,%s)', (name,password,'student'))
     client = app.test_client()
-    assert b'Invalid credentials' in client.post('/login', data={'username': names[0], 'password': secret}).data
-    before = snapshot()
-    try:
-        migrate_passwords(get_db)
-        raise AssertionError('Malformed Argon2 hash must stop migration')
-    except InvalidHashError:
-        pass
-    assert snapshot() == before, 'Migration must roll back all preceding updates'
-    query('DELETE FROM users WHERE username=%s', (names[1],))
-    assert migrate_passwords(get_db) == 1
-    assert verify_password(stored(names[0]), secret)
-    after = snapshot()
-    assert migrate_passwords(get_db) == 0 and snapshot() == after
+    assert client.post('/login', data={'username': names[0], 'password': 'wrong'}).status_code == 200
+    assert stored(names[0]) == secret
     assert client.post('/login', data={'username': names[0], 'password': secret}).status_code == 302
+    assert verify_password(stored(names[0]), secret)
     client.get('/logout')
     for username, password in [(names[0], 'wrong'), ('missing_'+prefix, secret), ("' OR 1=1 --", secret)]:
         response = client.post('/login', data={'username':username,'password':password})
@@ -76,4 +61,4 @@ try:
     assert verify_password(refreshed,secret)
 finally:
     query('DELETE FROM users WHERE username = ANY(%s)', (names,))
-print('PASS: Argon2id salts, correct/wrong passwords, plaintext rejection, migration rollback/repeatability, SQL injection rejection, demo logins, admin creation and rehash.')
+print('PASS: Argon2id salts, correct/wrong passwords, legacy login upgrade, SQL injection rejection, demo logins, admin creation and rehash.')
