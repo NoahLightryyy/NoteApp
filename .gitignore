@@ -15,3 +15,6 @@ venv/
 
 # Local encryption and CSV authentication keys
 session03/task3_notesapp/secrets/
+
+# Locally generated TLS certificate and private key
+nginx/certs/

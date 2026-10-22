@@ -9,12 +9,26 @@ A small grades application used throughout the Computer Security course. Teacher
 record grades and comments for their classes, students read their own grades, and an
 admin manages users and classes.
 
-## Run it
+## Submission map
+
+[Requirement-by-requirement audit and declared differences](SUBMISSION_STATUS.md).
+
+| Course item | Implementation / deliverable | How to inspect or run |
+|---|---|---|
+| P1 — threat model | [Complete report](project1/README.md), [requirement check](project1/SUBMISSION_CHECKLIST.md) | Diagram, STRIDE, 17 scored threats, Top 3 fixes |
+| C3 — AES-GCM comments | [Comment encryption](session03/task3_notesapp/web/comment_crypto.py), [migration](session03/task3_notesapp/web/migrate_comments.py) | [Combined C3/C4/HTTPS lab](#session-03-authenticated-csv-exports); separate database |
+| C4 — HMAC CSV export | [Signing and verification](session03/task3_notesapp/web/csv_hmac.py), [export route](session03/task3_notesapp/web/app.py) | `signed=1` downloads CSV and HMAC; verifier rejects tampering |
+| C5a / Lab 1 — HTTPS | [Root nginx config](nginx/nginx.conf), [Compose overlay](docker-compose.https.yml) | [Root HTTPS instructions](#class-5-root-application-over-https) |
+| C5b / Lab 2 — Argon2 | [Root login](web/app.py), [hashing](web/password_security.py), [upgrade test](web/test_login_upgrade.py) | [Password checks](#coursework-submissions) |
+
+Lab 1 and Lab 2 findings reports were sent directly to the instructor, as confirmed by the student. This repository provides their code. The separate `session03/task3_notesapp` app contains C3/C4 and its own HTTPS configuration; root `web/` is the Class 5 login-upgrade implementation. Running the root app alone does not enable C3/C4. Both paths are retained so the course baseline, later exercises and reported experiments remain distinguishable.
+
+## Run the root application over HTTP
 
 You need Docker with the Compose plugin.
 
 ```
-git clone git@github.com:KristenPire/NoteApp.git notesapp
+git clone https://github.com/NoahLightryyy/NoteApp.git notesapp
 cd notesapp
 docker compose up
 ```
@@ -25,6 +39,20 @@ automatically. When it is ready, open:
 ```
 http://localhost:8080
 ```
+
+## Class 5 root application over HTTPS
+
+Docker Compose 2.24.0 or newer is needed for `!reset`, which removes the base HTTP port mapping. From this repository after cloning:
+
+```sh
+python3 nginx/create_tls_cert.py
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build
+curl --cacert nginx/certs/notesapp.crt https://localhost/healthz
+```
+
+Open `https://localhost`. Port 80 redirects to HTTPS; the Flask port is not published by this overlay. The generated localhost certificate is self-signed: the browser warning is expected until you explicitly trust it for local testing. The generator preserves an existing certificate/key pair and does not change system trust. Certificates and private keys are not committed.
+
+The plain-HTTP command above is retained for the Lab 1 before/after comparison. For the HTTPS implementation use both Compose files shown here. The original application retains other deliberate course vulnerabilities; HTTPS does not fix those.
 
 ## Test accounts
 
@@ -78,6 +106,18 @@ docker compose up --build
 ```
 
 A plain `docker compose up` would keep running the old image.
+
+## Session 03: encrypted comments (C3)
+
+The C3 app is `session03/task3_notesapp`. It stores each non-null `notes.comment` as a `gcm1:` envelope containing a fresh 12-byte random nonce and AES-256-GCM ciphertext plus authentication tag. The note ID is authenticated as associated data, so moving a valid ciphertext to another record fails verification. The 32-byte key is generated locally and mounted as a Docker secret, outside PostgreSQL and Git.
+
+On startup, `migrate_comments.py` atomically encrypts existing plaintext comments. A rerun verifies existing ciphertext and preserves it. Teacher writes encrypt before storage; dashboard, API, teacher views and CSV exports decrypt on read. Use the setup commands in the following section to generate keys and certificates and start the combined app. Verify the complete C3/C4 flow with:
+
+```sh
+docker compose -f session03/task3_notesapp/compose.yaml exec -T web python - < session03/task3_notesapp/test_routes.py
+```
+
+This integration test temporarily updates and inserts course test records, restores them afterward, and verifies that tampered ciphertext is rejected.
 
 ## Session 03: authenticated CSV exports
 
@@ -155,6 +195,7 @@ For the root application, rebuild using your existing Compose configuration, the
 
 ```sh
 docker compose exec -T web python test_login_upgrade.py
+docker compose exec -T web python test_alice_login_upgrade.py
 docker compose exec -T web python test_passwords.py
 ```
 

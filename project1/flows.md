@@ -69,7 +69,6 @@ F01–F44 preserve the group’s global numbering. The separate teacher and admi
 | F58 | PostgreSQL → external database client: authentication/query response | TB5; conditional capability |
 | F59 | Flask → container environment/configuration: load database and signing configuration at startup | Internal configuration interface |
 | F60 | Container environment/configuration → Flask: configuration values | Internal configuration interface |
-
 | F61 | Ping process → destination: ICMP echo request; when a hostname is supplied, resolver query precedes it | TB7 for nonlocal network traffic; conditional on route, name resolution and egress policy |
 | F62 | Destination/resolver → ping process: ICMP echo reply, resolver answer or network error; a timeout can occur without a reply | TB7; local-only targets need not cross an external network boundary |
 
