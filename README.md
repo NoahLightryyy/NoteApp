@@ -73,3 +73,59 @@ docker compose up --build
 ```
 
 A plain `docker compose up` would keep running the old image.
+
+## Session 03: authenticated CSV exports
+
+The encrypted-comments version in `session03/task3_notesapp` exports CSV with
+HMAC-SHA256 authentication. HMAC detects changes; it does not encrypt the CSV.
+The teacher's export link downloads `grades.zip`, containing `grades.csv` and
+`grades.csv.hmac`. The signature covers the exact UTF-8 CSV bytes, including
+line endings. Opening and saving the CSV in a spreadsheet may invalidate it.
+
+Create the independent 32-byte HMAC key (existing keys are preserved), then rebuild:
+
+```sh
+python3 session03/task3_notesapp/create_key.py
+python3 session03/task3_notesapp/create_tls_cert.py
+docker compose -f session03/task3_notesapp/compose.yaml up -d --build
+```
+
+Verify a downloaded ZIP locally, without extra Python dependencies:
+
+```sh
+python3 session03/task3_notesapp/web/csv_hmac.py ~/Downloads/grades.zip --key session03/task3_notesapp/secrets/csv_hmac.key
+```
+
+Verification exits with status 0 on success and 1 on failure. Keep the key private
+and backed up; anyone with the key can also create valid signatures. The key is
+mounted as a Docker secret and is never included in the export. Retain the old key
+if you rotate it and need to verify old exports.
+
+Direct `/export.csv` requests still return CSV, with a hexadecimal signature in
+`X-CSV-HMAC-SHA256`. Add `signed=1` to download the ZIP with its signature file.
+
+Run the standalone signature tests:
+
+```sh
+python3 -m unittest discover -s session03/task3_notesapp -p test_csv_hmac.py
+```
+
+### Session 03 HTTPS
+
+Open https://localhost:8443. The old http://localhost:8081 address redirects to
+HTTPS. Nginx accepts TLS 1.2/1.3; Flask has no published host port and its session
+cookie uses Secure, HttpOnly and SameSite=Lax. HMAC exports work over HTTPS.
+
+The generated localhost certificate is self-signed: browsers will report it as
+untrusted until you explicitly trust this local certificate. The setup does not
+modify your system trust store. For a public deployment, replace it with a
+trusted certificate for your domain and update the nginx hostname and redirect.
+This remains a teaching app with other deliberately insecure features.
+
+Check TLS with the generated certificate (without disabling verification):
+
+```sh
+curl --cacert session03/task3_notesapp/secrets/tls/localhost.crt https://localhost:8443/healthz
+```
+
+TLS configuration reference: https://nginx.org/en/docs/http/configuring_https_servers.html

@@ -12,3 +12,6 @@ venv/
 # Local env overrides
 .env
 .env.local
+
+# Local encryption and CSV authentication keys
+session03/task3_notesapp/secrets/
