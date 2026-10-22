@@ -1,5 +1,10 @@
 # NotesApp
 
+## Student information
+
+- Name: Lv Songyuan
+- Student ID: 2023901706
+
 A small grades application used throughout the Computer Security course. Teachers
 record grades and comments for their classes, students read their own grades, and an
 admin manages users and classes.
