@@ -13,6 +13,8 @@ import base64
 import hashlib
 import subprocess
 
+from password_security import hash_password, verify_password, hasher, migrate_passwords
+
 import psycopg2
 import psycopg2.extras
 from flask import (
@@ -144,21 +146,21 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "")
         password = request.form.get("password", "")
-        # Keep user input separate from SQL syntax with bound parameters.
-        query = (
-            "SELECT id, username, role FROM users "
-            "WHERE username = %s AND password = %s"
-        )
         conn = get_db()
         cur = conn.cursor()
         try:
-            cur.execute(query, (username, password))
+            cur.execute("SELECT id, username, role, password FROM users WHERE username = %s",
+                        (username,))
             row = cur.fetchone()
-        except Exception as e:
-            # Keep the raw error visible - helps the SQLi session.
-            error = f"Query error: {e}"
-            row = None
-        conn.close()
+            if row and verify_password(row["password"], password):
+                if hasher.check_needs_rehash(row["password"]):
+                    cur.execute("UPDATE users SET password = %s WHERE id = %s AND password = %s",
+                                (hash_password(password), row["id"], row["password"]))
+            else:
+                row = None
+        finally:
+            cur.close()
+            conn.close()
         if row:
             session["user_id"] = row["id"]
             session["username"] = row["username"]
@@ -376,7 +378,7 @@ def admin_users():
         cur.execute(
             "INSERT INTO users (username, password, role, teacher_id) "
             "VALUES (%s, %s, %s, %s)",
-            (request.form.get("username"), request.form.get("password"),
+            (request.form.get("username"), hash_password(request.form.get("password", "")),
              request.form.get("role", "student"), None),
         )
     elif action == "delete":
@@ -396,5 +398,6 @@ def healthz():
 
 
 if __name__ == "__main__":
+    print(f"Migrated {migrate_passwords(get_db)} legacy passwords to Argon2id.")
     # Plain HTTP on purpose (flaw #3). Nginx + TLS is added in a later lab.
     app.run(host="0.0.0.0", port=5000, debug=True)

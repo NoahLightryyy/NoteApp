@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS notes, enrollments, classes, users CASCADE;
 CREATE TABLE users (
     id         SERIAL PRIMARY KEY,
     username   TEXT UNIQUE NOT NULL,
-    password   TEXT NOT NULL,          -- stored in clear text (planted flaw #1)
+    password   TEXT NOT NULL,          -- Argon2id encoded hash (includes parameters and random salt)
     role       TEXT NOT NULL,          -- 'student' | 'teacher' | 'admin'
     teacher_id INTEGER REFERENCES users(id)
 );
@@ -32,45 +32,45 @@ CREATE TABLE notes (
 );
 
 -- admin (id 1)
-INSERT INTO users (username,password,role,teacher_id) VALUES ('admin','admin123','admin',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('admin','$argon2id$v=19$m=65536,t=3,p=4$ws6z7ziEeBPCCKO14ompyA$6QW2HqKOAhDKMTvQn2ACO7wVhBGEuz7Y9K+YlQ2DfwU','admin',NULL);
 
 -- teachers (ids 2..5)
-INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.turing','teach123','teacher',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.lovelace','teach123','teacher',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.hopper','teach123','teacher',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.knuth','teach123','teacher',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.turing','$argon2id$v=19$m=65536,t=3,p=4$acI96EzltYTAu5O+Zznh1Q$tBLpCHPXK9j8gnGoXuLYw/kQz/zmsT9SX8q2iSdgNAM','teacher',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.lovelace','$argon2id$v=19$m=65536,t=3,p=4$YrZooFxLOrikIvkGXmzuzA$04VOOLHHqw7oRSV5DHsuK4kGDUqfOBtw31nJ3aaSvXk','teacher',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.hopper','$argon2id$v=19$m=65536,t=3,p=4$RUxQ/IOUOHx5O1FATe0Jhw$O3eGLvZQzSC4IbFeT4RerPSvTMs2rcEmoheStEWrEuE','teacher',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('prof.knuth','$argon2id$v=19$m=65536,t=3,p=4$ecbRrvhaPTocIl5p3SpQoA$tSmPuPtJOqObmTsvibN0B/Vf3tovyTipbQ9Zj9kzru4','teacher',NULL);
 
 -- students (ids 6..35)
-INSERT INTO users (username,password,role,teacher_id) VALUES ('alice','alicepw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('bob','bobpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('carol','carolpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('dave','davepw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('eve','evepw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('frank','frankpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('grace','gracepw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('heidi','heidipw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('ivan','ivanpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('judy','judypw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('mallory','mallorypw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('niaj','niajpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('olivia','oliviapw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('peggy','peggypw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('quentin','quentinpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('rupert','rupertpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('sybil','sybilpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('trent','trentpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('ursula','ursulapw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('victor','victorpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('wendy','wendypw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('xavier','xavierpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('yvonne','yvonnepw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('zack','zackpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('nora','norapw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('liam','liampw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('mia','miapw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('noah','noahpw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('emma','emmapw','student',NULL);
-INSERT INTO users (username,password,role,teacher_id) VALUES ('lucas','lucaspw','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('alice','$argon2id$v=19$m=65536,t=3,p=4$4KexirsZIjYrQRNwvy9XVA$s+qo+Q5RVAIQZvas8Z1UZs3q4fZ5AjMUfuB2FE/8nrs','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('bob','$argon2id$v=19$m=65536,t=3,p=4$iyiU0fc6CW+w//X8gEWXdw$/SjgyusblQWkdUrSeO7pj0duIKcT3of2y3Ot896XlHo','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('carol','$argon2id$v=19$m=65536,t=3,p=4$dv+3A5xJcgohw7RM2bspiQ$9YYkgd8om66DrMUANqX1BxLMHuFbc9bnc+AvZwaQ0DA','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('dave','$argon2id$v=19$m=65536,t=3,p=4$YwBX8FKBpi0aK0zUoRngZA$4SPdjPKwK2MW/u2/4c9x1rRWScAaVXg0Wocz8852ijI','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('eve','$argon2id$v=19$m=65536,t=3,p=4$AyzGkI7QH4gDH1lnmuSdWQ$jdPl/MwyVt/6A74rl8Uc2krHfFtO/unckol9cPhqWYg','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('frank','$argon2id$v=19$m=65536,t=3,p=4$6OuJiLZMiX3bGsC6itLs/w$E+5fhE7cbylgcXMw4HuW6g2ysfVe5LvptZz0INcLGIM','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('grace','$argon2id$v=19$m=65536,t=3,p=4$sI9edWW0aaI9yfVrWtRh+w$NaDVu4yzqr6u0ykACOpSDxmCNMjZyQId55fizYxPMJ0','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('heidi','$argon2id$v=19$m=65536,t=3,p=4$LP+J5QanZ4NCGHo3FSj+dw$DJHI7HrLZT3HF8OuFn/S9bH/WfqDce4y6cxJ5AhpFKU','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('ivan','$argon2id$v=19$m=65536,t=3,p=4$WSUmOGCArAemEt4WSH3Xjw$o2aHMX5rOp8ghcGnJP9m3vOx3MgNaw73JhL3JDjlVyE','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('judy','$argon2id$v=19$m=65536,t=3,p=4$waPvsFAd/9cOp2ElCadAJQ$rjsfiwGDLL/64JtdcKI1cOD91d94w/pcXY1FVaeLU7o','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('mallory','$argon2id$v=19$m=65536,t=3,p=4$Z7hNy+JdLi76MkmNKG4T8A$NYzqDVcaCBIDkvj1JruDrWGl/EklBHhABEBkXJKPK8U','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('niaj','$argon2id$v=19$m=65536,t=3,p=4$LUbkIU3JU5S0uTG/VYMu1A$ahRVu0GNH5HKJkapm9Mf9TL7x4MACM0AWUKc8AYxVJA','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('olivia','$argon2id$v=19$m=65536,t=3,p=4$IzQSqgl9JBmfgP5yAgI+2Q$sM2kNXfd7a7AykwSsRwNL2/jpf4OthjyLZfkh8ZG078','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('peggy','$argon2id$v=19$m=65536,t=3,p=4$GwjwU+iJ99B0uOeeE8Pn1A$MbSXFQVKyGWiuVAJJDJtrGmFCSF670qiUNecg0ua44M','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('quentin','$argon2id$v=19$m=65536,t=3,p=4$Q2FuY4pTkteiVWkGvTL2MQ$xO8yBRRF4Mbj0Jzv05JcfozqtAtXfIV4GWPKI87841Q','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('rupert','$argon2id$v=19$m=65536,t=3,p=4$hngBiBnNFWTpPS6PEMkfsw$UN+2LmWRCBrCWtALrczYn4NtP9FDprFSSvLc+J2BnsE','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('sybil','$argon2id$v=19$m=65536,t=3,p=4$V7MHM41D7+r1jWJKA+d0Aw$c3th+IFW6hC/sXPp1vbRCpnwfccep629dWZBa6de4Z0','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('trent','$argon2id$v=19$m=65536,t=3,p=4$U+K9AYRDmtd2KynFMhE20g$5JQitgb+5oinIKzvCt0B7wIR55R97VCLiSo9Zumr7cI','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('ursula','$argon2id$v=19$m=65536,t=3,p=4$Ez0gmg/yRJuSUV+AfPuzPQ$7fDB15LgVEQs/EKBOH4n1Dnzbrl3VmJR+4I9LQu5+F8','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('victor','$argon2id$v=19$m=65536,t=3,p=4$PL2qGci4tx+UcqcvkrbF4w$3hpS9Fmxyo+jvAM18dYEbeS+pF1CrcNNxyzSCyMmxTs','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('wendy','$argon2id$v=19$m=65536,t=3,p=4$wmZ8YTtJD2IpS9O02BLPNg$S6UCMAPtwjpzufg2BGkFaNsS0jLzzM9VWxJlot+5Xnk','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('xavier','$argon2id$v=19$m=65536,t=3,p=4$0X2dkVfzf7aIq2i9+yPldQ$HARM2ep4V52uB3GM0VqA1L+XVIoFcnU9lGE/LwX5JJI','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('yvonne','$argon2id$v=19$m=65536,t=3,p=4$LQKf4HjQwKwTONmu6UyPQA$4ixMBNFA2tb7I0exFX8AbEx3CqZk+TQKal2+qO229GE','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('zack','$argon2id$v=19$m=65536,t=3,p=4$WM2rAXNbzNoNmZynpK5kDQ$0iCyGvZEupofMy9zEIR1KrqXJhuNOU8OmeMfizNw6wg','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('nora','$argon2id$v=19$m=65536,t=3,p=4$hO2Sz3q33zY+mRDX3IPFHQ$1A3UZYhS3Lr8fvV2d67tVOGmr7mEM+gRYU+PEcPXaBo','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('liam','$argon2id$v=19$m=65536,t=3,p=4$34Tl43BGMcIdirO8dsjq5g$mkDMNYJeoUl5wu8xxSp0HMB13aJweVZqBBugYjmxkUw','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('mia','$argon2id$v=19$m=65536,t=3,p=4$QbQjFJtk9ruv/OX2zx5Ajg$0UFpysWWI2VLnZazAdp9YKHSdpJ5tc7EDprJnkcTXxQ','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('noah','$argon2id$v=19$m=65536,t=3,p=4$Z2rQKPIDbURARUz8KCoNHQ$j+j2Yy/Yfsra//uVqkugczbpQrrbs+OKbzIXgGkgt5c','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('emma','$argon2id$v=19$m=65536,t=3,p=4$xQPlOyxvPwAhMya/xnRaWg$l2DerdJSzbdMmS9kqdAVTzaFBDHbJS1Kln4RIVwTYRI','student',NULL);
+INSERT INTO users (username,password,role,teacher_id) VALUES ('lucas','$argon2id$v=19$m=65536,t=3,p=4$d45DUFn0yKENg/UQkJtJtw$IOaFsc5Yl1+JsYmyiqahjiMGOWNdYyv1bDDn94o6xAQ','student',NULL);
 
 -- classes (ids 1..4), teacher_id references users ids 2..5
 INSERT INTO classes (name,teacher_id) VALUES ('Mathematics',2);

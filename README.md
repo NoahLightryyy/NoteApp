@@ -134,3 +134,21 @@ curl --cacert session03/task3_notesapp/secrets/tls/localhost.crt https://localho
 ```
 
 TLS configuration reference: https://nginx.org/en/docs/http/configuring_https_servers.html
+
+## Coursework submissions
+
+- **P1:** [Threat model, diagrams, STRIDE analysis and Top 3 fixes](project1/README.md), submitted by Lv Songyuan (2023901706). The report assesses the original course commit, before these lab fixes.
+- **C3 / C4 / C5a:** Comment encryption, HMAC CSV exports and nginx HTTPS are in `session03/task3_notesapp` (instructions above).
+- **C5b:** Both `web/` and `session03/task3_notesapp/web/` use Argon2id for passwords. Login fetches the username with a bound SQL parameter, verifies its hash, and refreshes outdated hash parameters after a successful login. Admin-created users and database seeds store salted hashes.
+
+Argon2id uses 64 MiB memory, 3 iterations, 4 lanes and a fresh random salt per password, via [argon2-cffi](https://argon2-cffi.readthedocs.io/en/stable/api.html). Passwords are hashed, not reversibly encrypted. The documented demo credentials still work.
+
+Rebuild either application to install the dependency. Before serving requests, its startup atomically migrates any existing plaintext passwords in the database; reruns preserve existing hashes. Do not delete the data volume to upgrade. For the combined HTTPS lab:
+
+```sh
+docker compose -f session03/task3_notesapp/compose.yaml up -d --build
+docker compose -f session03/task3_notesapp/compose.yaml exec -T web python test_passwords.py
+python3 session03/task3_notesapp/test_https.py
+```
+
+For the root application, use `docker compose up -d --build` and `docker compose exec -T web python test_passwords.py`. The password test creates temporary test users and removes them afterward; it also checks migration rollback and repeatability. Other deliberately insecure course features remain.

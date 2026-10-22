@@ -15,8 +15,6 @@ COPY . /app
 # NOTE (flaw #6): these are world-readable/writable and the container stays root.
 RUN mkdir -p /var/log/notesapp /app/backups \
     && printf 'DB_PASSWORD=notesapp_pg_pw_2024\nJWT_SECRET=s3cr3t\n' > /app/config.env \
-    && printf '%s\n' '-- nightly dump of users table' \
-        'admin:admin123:admin' 'prof.turing:teach123:teacher' > /app/backups/users_backup.sql \
     && touch /var/log/notesapp/app.log \
     && chmod -R 0777 /var/log/notesapp /app/backups \
     && chmod 0666 /app/config.env
