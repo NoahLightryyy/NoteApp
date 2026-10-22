@@ -70,6 +70,9 @@ F01–F44 preserve the group’s global numbering. The separate teacher and admi
 | F59 | Flask → container environment/configuration: load database and signing configuration at startup | Internal configuration interface |
 | F60 | Container environment/configuration → Flask: configuration values | Internal configuration interface |
 
+| F61 | Ping process → destination: ICMP echo request; when a hostname is supplied, resolver query precedes it | TB7 for nonlocal network traffic; conditional on route, name resolution and egress policy |
+| F62 | Destination/resolver → ping process: ICMP echo reply, resolver answer or network error; a timeout can occur without a reply | TB7; local-only targets need not cross an external network boundary |
+
 F13 without an accepted identity returns 401 before database access. A missing note returns 404.
 For F09, F17, F21, F25, F29, F33 and F37, a failed session/role check redirects to /login.
 Login follows F04 → F49 → F50 → the role page; role diagrams abbreviate this chain.
@@ -98,3 +101,5 @@ Static files, logs, packaged configuration and the baked backup are container re
 | Admin | 17, 18 | F38, F39 |
 
 The handwritten figure follows global IDs but is a rough sketch: its static-file arrows should terminate at container static files, not PostgreSQL. The corrected system diagram and this register govern the submission.
+
+F61–F62 expand the network activity behind F38–F39. They are code-supported capabilities of the ping command, not a claim that an external probe was performed.

@@ -1,6 +1,6 @@
 # NotesApp risk assessment and top three fixes
 
-Contribution for group review, 15 October 2026. This extends the group’s existing TH01–TH17 threat register. Scores assume the unchanged application is reachable by untrusted network clients and its published default configuration is known. These are code-based risk estimates, not results of new exploitation tests.
+Submitted by **Lv Songyuan (2023901706)**. Reviewed 22 October 2026. This is an extract of the [complete report](README.md), assessing original commit `1c83e422429c4b784411701ffd797b5ab5f397dc`, not current main. Scores assume the original app is reachable by untrusted network clients with its default configuration known. See the complete report for diagrams, evidence limits, sources and AI contribution disclosure.
 
 ## Risk scoring method
 
@@ -25,7 +25,7 @@ S = Spoofing; T = Tampering; R = Repudiation; I = Information disclosure; D = De
 | TH01 | S T E | F01–F04 / TB1 TB2 | 5 | 5 | 25 | Critical |
 | TH02 | S E | F04 and session-protected routes / TB1 | 5 | 5 | 25 | Critical |
 | TH03 | S I | F13–F16 / TB1 | 5 | 4 | 20 | Critical |
-| TH04 | I | F13–F16 / TB1 TB2 | 5 | 4 | 20 | Critical |
+| TH04 | I | F13–F16 / TB1 TB2 | 4 | 4 | 16 | High |
 | TH05 | I E | F17–F20 F25–F28 / TB1 TB2 | 4 | 4 | 16 | High |
 | TH06 | T E | F21–F24 / TB1 TB2 | 4 | 4 | 16 | High |
 | TH07 | T I | F21–F24 then F09–F12 or F17–F20 / TB1 TB2 | 3 | 4 | 12 | High |
@@ -76,7 +76,7 @@ A logged-in student can request another student’s note because the API selects
 
 **Evidence:** `web/app.py:202–222; student observation reported in conversation`.
 
-**Likelihood 5:** Changing a note ID is simple for any student; earlier student observation reports cross-user reads. **Impact 4:** Grades and private comments across students can be disclosed.
+**Likelihood 4:** Requires an ordinary authenticated student account; changing a note ID then reaches an unscoped query. This matches the scale for authenticated access. Forging identity without an account is assessed separately as TH03. **Impact 4:** Grades and private comments across students can be disclosed.
 
 **Mitigation:** Scope queries to the current student; define explicit teacher/admin policies and test the permission matrix.
 
@@ -144,7 +144,7 @@ Database access exposes plaintext passwords/comments; container-image access als
 
 Incomplete, locally writable audit records leave insufficient evidence to attribute or reconstruct reads and administrative changes.
 
-**Evidence:** `web/app.py:38–44,170–175,271,339; web/Dockerfile:22–23`.
+**Evidence:** `web/app.py:38–44,170–175,271,339; web/Dockerfile:20–22`.
 
 **Likelihood 4:** Normal sensitive operations omit key audit fields; code can silently ignore logging failures. **Impact 3:** Disputes and incident reconstruction become difficult even when data is still available.
 
@@ -168,7 +168,7 @@ The administrator-controlled host string is concatenated into a shell command, e
 
 **Likelihood 3:** Requires an administrator session, possibly obtained through TH01 or TH02. **Impact 5:** Commands run with the web process privileges and can damage the service or lead to TH14.
 
-**Mitigation:** Avoid shell=True, validate destinations, use fixed executable arguments, restrict egress, and run the process with minimal privileges.
+**Mitigation:** Avoid shell=True, validate destinations, use fixed executable arguments, restrict egress across TB7 (F61–F62), and run the process with minimal privileges.
 
 ### TH14
 
@@ -212,7 +212,7 @@ Issued JWTs lack expiry and copied tokens can still be used at the API after log
 
 ## The three highest priority risks
 
-TH01 and TH02 both score 25. TH03 and TH04 both score 20; TH03 is selected third because it removes the need for an existing student session. TH04 remains an urgent independent authorization defect even after JWT verification is fixed.
+TH01 and TH02 both score 25; they are tied for first priority. TH03 scores 20 and is third. TH04 scores 16 because it requires an authenticated account; it remains an independent authorization defect after JWT verification is fixed. TH05 and TH06 also score 16. The ordering of the tied first two risks is a presentation choice, not a claim of different numerical risk.
 
 ### Priority 1 TH01 Login SQL injection
 
@@ -241,8 +241,3 @@ TH01 and TH02 both score 25. TH03 and TH04 both score 20; TH03 is selected third
 ### Attack chain and parallel containment
 
 TH01 or TH02 may provide the administrator session needed for TH13. Shell execution can then expose TH14 through the Docker socket. Keep TH13 and TH14 as separate findings with their own prerequisites; do not treat them as independently unauthenticated paths or add their scores. Remove the socket and shell interpretation promptly even though they are not among the three largest individual scores.
-
-
-## Review and attribution
-
-AI assisted with code review, organization, proposed ratings and English wording. Group members should confirm the scenario, scores and mitigations under the course AI policy. Source paths are relative to the NotesApp repository; the full package includes the diagram mapping and source register. CSRF, CSV formula evaluation, denial-of-service thresholds and host consequences remain conditional rather than demonstrated.

@@ -1,10 +1,10 @@
 # Three minute presentation
 
-Approximate duration: 3 minutes at 125–140 words per minute. Divide the sections among the speakers. The ratings below are assessment judgments under the network-accessible deployment assumption.
+Approximate duration: 3 minutes at 125–140 words per minute. Divide the sections among the speakers. The ratings below are assessment judgments under the network-accessible deployment assumption. This script is preparation material; it does not establish that the group presentation has taken place.
 
 ## Scope and architecture
 
-Our project models threats to NotesApp, a grades application with student, teacher and administrator roles. Students should read their own grades, while teachers should manage their assigned classes. We traced browser requests into Flask, database queries into PostgreSQL, and the administrator ping function into a shell process.
+Our project models the original course version of NotesApp, a grades application with student, teacher and administrator roles. Students should read their own grades, while teachers should manage their assigned classes. We traced browser requests into Flask, database queries into PostgreSQL, and the administrator ping function into a shell process.
 
 Our diagrams also include the container’s access to host resources, the published database port and the interpretation of exported CSV files. These matter because threats do not stop at the browser-to-server boundary.
 
@@ -24,4 +24,4 @@ Third, forged API tokens score twenty. The custom verifier accepts unsigned JWTs
 
 Our evidence combines group-recorded page flows and code inspection. We distinguish these from untested outcomes, especially CSRF, spreadsheet formula execution and denial of service. An administrator compromise may chain into shell execution and Docker Engine access, so removing the shell interpretation and Docker socket is an additional containment priority.
 
-The main lesson is that authentication, authorization and runtime isolation need separate controls. Our submission connects each threat to data flows, a justified score and a proposed mitigation. The fixes have not yet been implemented or tested.
+The main lesson is that authentication, authorization and runtime isolation need separate controls. Our submission connects each threat to data flows, a justified score and a proposed mitigation. These are recommendations for that baseline; later labs implement selected fixes, not the entire remediation plan.

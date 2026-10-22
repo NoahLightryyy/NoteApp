@@ -1,12 +1,10 @@
 # NotesApp top three risks and fixes
 
-Group review version, 15 October 2026. Based on the group’s TH01–TH17 register. Scores assume the unchanged teaching application is reachable by untrusted network clients and its published default configuration is known. These are analytical estimates, not new attack-test results.
-
-Risk = likelihood × impact, each rated 1–5. The full scale, all 17 ratings and their rationales are in the companion file Risk_Assessment.md.
+Submitted by **Lv Songyuan (2023901706)**. Reviewed 22 October 2026. This is an extract of the [complete report](README.md), assessing original commit `1c83e422429c4b784411701ffd797b5ab5f397dc`, not current main. Scores assume the original app is reachable by untrusted network clients with its default configuration known. See the complete report for diagrams, evidence limits, sources and AI contribution disclosure.
 
 ## The three highest priority risks
 
-TH01 and TH02 both score 25. TH03 and TH04 both score 20; TH03 is selected third because it removes the need for an existing student session. TH04 remains an urgent independent authorization defect even after JWT verification is fixed.
+TH01 and TH02 both score 25; they are tied for first priority. TH03 scores 20 and is third. TH04 scores 16 because it requires an authenticated account; it remains an independent authorization defect after JWT verification is fixed. TH05 and TH06 also score 16. The ordering of the tied first two risks is a presentation choice, not a claim of different numerical risk.
 
 ### Priority 1 TH01 Login SQL injection
 
@@ -35,8 +33,3 @@ TH01 and TH02 both score 25. TH03 and TH04 both score 20; TH03 is selected third
 ### Attack chain and parallel containment
 
 TH01 or TH02 may provide the administrator session needed for TH13. Shell execution can then expose TH14 through the Docker socket. Keep TH13 and TH14 as separate findings with their own prerequisites; do not treat them as independently unauthenticated paths or add their scores. Remove the socket and shell interpretation promptly even though they are not among the three largest individual scores.
-
-
-## Review and attribution
-
-AI assisted with code review, organization, proposed ratings and English wording. Group members should confirm the scenario, scores and mitigations under the course AI policy. Source paths are relative to the NotesApp repository; the full package includes the diagram mapping and source register. CSRF, CSV formula evaluation, denial-of-service thresholds and host consequences remain conditional rather than demonstrated.

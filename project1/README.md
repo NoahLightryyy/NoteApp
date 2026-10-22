@@ -6,15 +6,26 @@ Group source materials are credited below; this identifies the owner of this sub
 
 This assessment identifies threats to student grades, teacher comments, user identities and the NotesApp runtime. The highest-priority findings are login SQL injection, a published session-signing secret, and acceptance of forged API tokens. The group’s flow diagrams and 17-threat register are retained, with consistent references, risk estimates and proposed fixes.
 
-[Flow register](flows.md) · [Three minute presentation](presentation.md) · [Group handoff in Chinese](HANDOFF_中文.txt)
+[Requirements and submission checklist](SUBMISSION_CHECKLIST.md) · [Flow register](flows.md) · [Three minute presentation](presentation.md) · [Group handoff in Chinese](HANDOFF_中文.txt)
 
 ## Scope and assumptions
 
-The assessed version is repository commit `1c83e422429c4b784411701ffd797b5ab5f397dc`, using the original `web/`, `db/` and Docker Compose configuration. The separate `session03/task3_notesapp` encryption exercise is excluded.
+The assessed version is repository commit `1c83e422429c4b784411701ffd797b5ab5f397dc`, using the original `web/`, `db/` and Docker Compose configuration. The separate `session03/task3_notesapp` encryption exercise is excluded. All source line numbers below refer to this fixed baseline, not the current main branch. Later security labs do not change this baseline risk assessment.
 
 Policy follows the project README: students read their own grades, teachers manage grades for their assigned classes, and administrators manage user accounts. Administrative status does not grant a legitimate right to run arbitrary operating-system commands. Where the intended policy differs, ownership findings must be reconsidered.
 
 Risk scores use a hypothetical deployment of this unchanged teaching application on a network reachable by untrusted clients, with its source and default configuration available. They are not estimates of attack activity on the student's loopback-only browsing session. The database port and web port are published in Compose; actual external reachability depends on host configuration. Default seeded account passwords are also a deployment precondition to remove; they overlap the identity-compromise findings rather than forming a separate ranked row.
+
+### Assets and intended access
+
+| Asset | Security objective and intended access |
+|---|---|
+| Grades, enrollments and class assignments | Integrity; students read their own grades, teachers manage assigned classes, enrollment and grade-range rules apply to writes. |
+| Teacher comments | Confidentiality and integrity under the same record-access policy as grades. |
+| Passwords, signing keys and session/JWT credentials | Prevent disclosure, forgery and unauthorized reuse; only the authentication service should handle secrets. |
+| User identities and roles | Administrators manage accounts; clients cannot choose a more privileged identity or role. |
+| Logs and change history | Preserve attribution and reliable evidence of sensitive actions. |
+| Application, database and host resources | Availability and isolation; ordinary users and app processes must not gain unrestricted host control. |
 
 ### Evidence and confidence
 
@@ -26,7 +37,7 @@ Risk scores use a hypothetical deployment of this unchanged teaching application
 
 ![System overview and boundaries](assets/system-overview.svg)
 
-Use the [canonical flow register](flows.md) for the payload and direction of every numbered arrow and the local-to-global diagram cross reference. F01–F44 retain the group numbering. F45–F60 add health checks, redirects, logging, configuration and conditional host/database access paths.
+Use the [canonical flow register](flows.md) for the payload and direction of every numbered arrow and the local-to-global diagram cross reference. F01–F44 retain the group numbering. F45–F62 add health checks, redirects, logging, configuration, conditional host/database access and ping network traffic.
 
 | Boundary | Meaning and flows |
 |---|---|
@@ -35,7 +46,10 @@ Use the [canonical flow register](flows.md) for the payload and direction of eve
 | TB3 | Untrusted host text interpreted by the shell/ping execution interface, F38–F39. This is an interpreter boundary within the web container, not OS process privilege isolation. |
 | TB4 | Web container to Docker Engine host and host project files, F53–F56. Socket and bind mounts weaken container isolation. On Docker Desktop, Engine-host control is not automatically equivalent to unrestricted control of the macOS host. |
 | TB5 | Potential external client to published PostgreSQL port, F57–F58. This path bypasses web authorization and relies on database/network controls. |
+| TB7 | Ping process to a network destination and, for hostnames, its resolver, F61–F62. The admin-supplied destination crosses an outbound network boundary; loopback-only pings remain local. |
 | TB6 | Downloaded CSV content interpreted by a teacher's spreadsheet application. Browser export delivery is F28; subsequent formula evaluation is a downstream client trust decision. |
+
+Student, teacher and administrator are separate logical permission domains enforced at TB1 and in record-level queries; sharing a browser box does not grant shared permissions.
 
 Static assets, local logs, packaged config and backup files are shown as internal resources, not assumed to be separate privilege domains. Database and image backups outside the supplied configuration, internet identity providers and unrelated systems are outside scope. TLS is not configured in the assessed default deployment. Detailed network segmentation is a proposed improvement, not an existing control.
 
@@ -70,7 +84,7 @@ S = Spoofing; T = Tampering; R = Repudiation; I = Information disclosure; D = De
 | TH01 | S T E | F01–F04 / TB1 TB2 | 5 | 5 | 25 | Critical |
 | TH02 | S E | F04 and session-protected routes / TB1 | 5 | 5 | 25 | Critical |
 | TH03 | S I | F13–F16 / TB1 | 5 | 4 | 20 | Critical |
-| TH04 | I | F13–F16 / TB1 TB2 | 5 | 4 | 20 | Critical |
+| TH04 | I | F13–F16 / TB1 TB2 | 4 | 4 | 16 | High |
 | TH05 | I E | F17–F20 F25–F28 / TB1 TB2 | 4 | 4 | 16 | High |
 | TH06 | T E | F21–F24 / TB1 TB2 | 4 | 4 | 16 | High |
 | TH07 | T I | F21–F24 then F09–F12 or F17–F20 / TB1 TB2 | 3 | 4 | 12 | High |
@@ -121,7 +135,7 @@ A logged-in student can request another student’s note because the API selects
 
 **Evidence:** `web/app.py:202–222; student observation reported in conversation`.
 
-**Likelihood 5:** Changing a note ID is simple for any student; earlier student observation reports cross-user reads. **Impact 4:** Grades and private comments across students can be disclosed.
+**Likelihood 4:** Requires an ordinary authenticated student account; changing a note ID then reaches an unscoped query. This matches the scale for authenticated access. Forging identity without an account is assessed separately as TH03. **Impact 4:** Grades and private comments across students can be disclosed.
 
 **Mitigation:** Scope queries to the current student; define explicit teacher/admin policies and test the permission matrix.
 
@@ -189,7 +203,7 @@ Database access exposes plaintext passwords/comments; container-image access als
 
 Incomplete, locally writable audit records leave insufficient evidence to attribute or reconstruct reads and administrative changes.
 
-**Evidence:** `web/app.py:38–44,170–175,271,339; web/Dockerfile:22–23`.
+**Evidence:** `web/app.py:38–44,170–175,271,339; web/Dockerfile:20–22`.
 
 **Likelihood 4:** Normal sensitive operations omit key audit fields; code can silently ignore logging failures. **Impact 3:** Disputes and incident reconstruction become difficult even when data is still available.
 
@@ -213,7 +227,7 @@ The administrator-controlled host string is concatenated into a shell command, e
 
 **Likelihood 3:** Requires an administrator session, possibly obtained through TH01 or TH02. **Impact 5:** Commands run with the web process privileges and can damage the service or lead to TH14.
 
-**Mitigation:** Avoid shell=True, validate destinations, use fixed executable arguments, restrict egress, and run the process with minimal privileges.
+**Mitigation:** Avoid shell=True, validate destinations, use fixed executable arguments, restrict egress across TB7 (F61–F62), and run the process with minimal privileges.
 
 ### TH14
 
@@ -257,7 +271,7 @@ Issued JWTs lack expiry and copied tokens can still be used at the API after log
 
 ## The three highest priority risks
 
-TH01 and TH02 both score 25. TH03 and TH04 both score 20; TH03 is selected third because it removes the need for an existing student session. TH04 remains an urgent independent authorization defect even after JWT verification is fixed.
+TH01 and TH02 both score 25; they are tied for first priority. TH03 scores 20 and is third. TH04 scores 16 because it requires an authenticated account; it remains an independent authorization defect after JWT verification is fixed. TH05 and TH06 also score 16. The ordering of the tied first two risks is a presentation choice, not a claim of different numerical risk.
 
 ### Priority 1 TH01 Login SQL injection
 
@@ -293,7 +307,7 @@ All six categories are covered: S by TH01/02/03/09/17; T by TH01/06/07/08/09/13/
 
 CSRF feasibility depends on the actual browser and cookie context. An unset SameSite configuration is not proof that every cross-site POST carries a cookie. CSV risk depends on the spreadsheet's import and evaluation behavior. Denial-of-service capacity and host-level consequences are hypotheses supported by configuration, not demonstrated outcomes. The app also runs in debug mode; disabling the development debugger is part of deployment hardening, without assuming that its interactive console is accessible.
 
-The fixes are proposals and acceptance criteria, not implemented or verified remediations. Authorized testing should use disposable course data, redact credentials/tokens, and avoid disruptive load or destructive actions.
+The fixes in this baseline report are proposals with acceptance criteria, not a claim that all defects have been remediated. Subsequent commits implement selected login, ownership, encryption, HMAC, HTTPS and password-hashing changes; see the repository README for their separate scope and tests. Authorized testing should use disposable course data, redact credentials/tokens, and avoid disruptive load or destructive actions.
 
 ## Sources and contribution note
 
