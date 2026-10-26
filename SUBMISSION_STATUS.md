@@ -2,6 +2,8 @@
 
 Reviewed on **22 October 2026** for **Lv Songyuan (2023901706)**. This records verifiable contents and delivery information, not a grade or instructor acceptance.
 
+Delivery clarification on **26 October 2026**: the student confirmed that the privately sent attachments were the latest Lab 1 / Lab 2 reports or ZIP, containing both partners' names and student IDs.
+
 ## Requirements and evidence
 
 | Item | Requirement source | Evidence in this submission | Delivery status |
@@ -29,6 +31,6 @@ The repository contents plus this audit's packaging fixes were copied into a sep
 1. **Alice's migration history.** Earlier work had already migrated the live Alice account. The submitted Lab 2 report says so; her later successful logins do not establish a first-login plaintext-to-hash transition. A separate rollback-only test now demonstrates that transition using Alice in an isolated transaction and restores her original stored value. This is supplemental verification, not a rewrite of the historical experiment.
 2. **SQL injection scaffold.** The Lab 2 scaffold asks students to retain username SQL concatenation for a later class. This fork had already repaired login SQL injection in an earlier exercise, and retains bound SQL parameters. Argon2 migration is implemented, but this is an explicit additional hardening difference from that scaffold.
 3. **Separate deployments.** C3/C4 are implemented in `session03/task3_notesapp`; C5b upgrade-on-login is implemented in root `web/`. The combined copy retains its older startup bulk-migration behavior. The [README submission map](README.md#submission-map) gives each entry point rather than claiming that root startup enables every lab.
-4. **Report identity and version.** Reviewed local reports use “Lyu Songyuan” with the same student ID, while this repository follows the student's requested “Lv Songyuan”. The latest Lab 1/Lab 2 report directories include both partner names and IDs. An older named bundle lacks the partner/ID line; which exact attachment the instructor received is not yet established.
+4. **Report identity and version.** Reviewed local reports use “Lyu Songyuan” with the same student ID, while this repository follows the student's requested “Lv Songyuan”. On 26 October, the student confirmed sending the latest Lab 1 / Lab 2 reports or ZIP, which include both partners' names and student IDs. The older bundle's missing partner/ID line does not apply to the confirmed submission.
 5. **Historical prediction.** The Lab 2 report records the pre-attack time prediction but states that the predicted number of cracked accounts was not recorded. No retrospective prediction has been invented.
 6. **P1 formalities.** This fork first received P1 on 22 October, after the original 20 October deadline. An earlier group hand-in or extension has not been verified. Other P1 members and the designated group repository are not established by the reviewed records. The student has deferred the presentation; this is not documented instructor exemption.
