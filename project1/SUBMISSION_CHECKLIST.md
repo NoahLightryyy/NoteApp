@@ -1,6 +1,6 @@
 # Project 1 requirements and submission check
 
-Reviewed: **22 October 2026**. Submission owner: **Lv Songyuan — 2023901706**.
+Reviewed: **22 October 2026**. Submission owner: **Lv Songyuan — 2023901706**. Group membership clarified by the student on **26 October 2026**.
 
 ## Requirement source
 
@@ -22,8 +22,8 @@ The complete report in [README.md](README.md) governs the submission. The separa
 | Obligation | What is established | What is not established |
 |---|---|---|
 | GitHub hand-in | This fork received the P1 package in commit `68aad16` on 22 October 2026. | This does not establish an on-time submission before 20 October. An earlier group submission in another repository or an extension has not been verified. |
-| Groups of 3–4 | Group diagrams and threat material are credited; this fork identifies Lv Songyuan. | Other members' names and the designated group submission repository have not been supplied in the recovered material reviewed here. |
-| Three-minute group presentation | [English script](presentation.md) is included. | A script is not evidence that the required presentation took place or that every group member participated. |
+| Groups of 3–4 | The student confirmed three members: Lv Songyuan (2023901706), Liu Yunfei (2023905324), and Wu Siyuan (2023905932). There is no separate group repository; this fork is Lv Songyuan’s submission. | The other members’ own submissions or approval of this revision have not been established. |
+| Three-minute group presentation | [English script](presentation.md) is included. | The student has deferred the presentation. A script is not evidence that it occurred, and no instructor exemption has been established. |
 
 ## Scope and evidence
 

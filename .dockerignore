@@ -1,0 +1,8 @@
+*
+!web/
+!web/**
+!tests/
+!tests/**
+**/__pycache__/
+**/*.pyc
+**/.DS_Store

@@ -1,0 +1,17 @@
+{
+  "recorded_at_utc": "2026-10-26T18:16:39.224049+00:00",
+  "command": "python -m unittest discover -s session03 -p test_exercises.py -v",
+  "tests_run": 5,
+  "passed": true,
+  "scope": "Synthetic, no-database teaching exercise unit tests; not historical lab measurements.",
+  "source_files": {
+    "crack/benchmark.py": "aeb0fcd34312c40350643f3f1a212e57b016eb494bbddd5eaf16a1dd92e8a1c6",
+    "crack/crack.py": "8564310ac7309a34c21fa72c816735f92ee2b836a7378dd32fcb7e8f57f1863d",
+    "crack/make_dump.py": "09e7f88dcdadf266018487e88d061b7d762ba071b3bc480a8a6a4bbd681a9e23",
+    "crack/wordlist.txt": "3614d52dbb45e8b0080821bdf1a0c0ad2cbac2cc85551239f4f2bc2a9ebc5e3f",
+    "session03/requirements.txt": "fbbd21915395bc49605a854b9286d7356570cdc03399fa9eb69ad4b23cffdca0",
+    "session03/task1_caesar.py": "b956de36b0bb5170570036a1f6a266b74f1a4569c2700cb7fe8c89ff34b4d012",
+    "session03/task2_images.py": "40de79bfeee0d71f18952468794980987b1f4371141b1d45d9d73d45cf054325",
+    "session03/test_exercises.py": "8b65b85d17861019b9cea4c6ebba41c5afd95d57873a62bdf0caf3513ccbf209"
+  }
+}

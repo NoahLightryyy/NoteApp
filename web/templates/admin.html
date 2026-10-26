@@ -2,6 +2,7 @@
 {% block content %}
 <div class="card">
   <h1>Users</h1>
+  <p><a href="{{ url_for('teacher') }}">Manage grades and signed exports</a></p>
   <table>
     <thead><tr><th>id</th><th>Username</th><th>Role</th><th></th></tr></thead>
     <tbody>
@@ -12,6 +13,7 @@
         <td><span class="badge badge-{{ u.role }}">{{ u.role }}</span></td>
         <td>
           <form method="post" action="{{ url_for('admin_users') }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="user_id" value="{{ u.id }}">
             <button type="submit" class="small danger">delete</button>
@@ -21,12 +23,17 @@
       {% endfor %}
     </tbody>
   </table>
+  <nav aria-label="User pages">
+    {% if users_after %}<a href="{{ url_for('admin', classes_after=classes_after) }}">First users</a>{% endif %}
+    {% if users_next %}<a href="{{ url_for('admin', users_after=users_next, classes_after=classes_after) }}">Next users</a>{% endif %}
+  </nav>
 
   <h2>Add user</h2>
   <form method="post" action="{{ url_for('admin_users') }}" class="row">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="action" value="create">
-    <input type="text" name="username" placeholder="username">
-    <input type="text" name="password" placeholder="password">
+    <input type="text" name="username" placeholder="username" maxlength="80" required>
+    <input type="password" name="password" placeholder="password (12+ characters)" minlength="12" maxlength="1024" autocomplete="new-password" required>
     <select name="role">
       <option value="student">student</option>
       <option value="teacher">teacher</option>
@@ -41,13 +48,18 @@
   <ul class="classes">
     {% for c in classes %}<li>{{ c.name }} (teacher_id {{ c.teacher_id }})</li>{% endfor %}
   </ul>
+  <nav aria-label="Class pages">
+    {% if classes_after %}<a href="{{ url_for('admin', users_after=users_after) }}">First classes</a>{% endif %}
+    {% if classes_next %}<a href="{{ url_for('admin', users_after=users_after, classes_after=classes_next) }}">Next classes</a>{% endif %}
+  </nav>
 </div>
 
 <div class="card">
   <h2>Test the server</h2>
-  <p>Check that a host is reachable from the server.</p>
+  <p>Run a local loopback connectivity check (localhost, 127.0.0.1 or ::1).</p>
   <form method="post" action="{{ url_for('admin_ping') }}" class="row">
-    <input type="text" name="host" placeholder="e.g. 127.0.0.1">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="text" name="host" value="127.0.0.1" maxlength="45" required>
     <button type="submit">Ping</button>
   </form>
   {% if ping_result %}<pre>{{ ping_result }}</pre>{% endif %}

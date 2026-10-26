@@ -11,8 +11,7 @@
         <td>{{ n.id }}</td>
         <td>{{ n.class_name }}</td>
         <td>{{ n.grade }}</td>
-        {# Flaw #10: comment rendered as rich text, autoescaping OFF. #}
-        <td>{% autoescape false %}{{ n.comment }}{% endautoescape %}</td>
+        <td>{{ n.comment or '' }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -20,22 +19,30 @@
   {% else %}
   <p>No grades yet.</p>
   {% endif %}
+  <nav aria-label="Grade pages">
+    {% if after %}<a href="{{ url_for('dashboard') }}">First page</a>{% endif %}
+    {% if next_cursor %}<a href="{{ url_for('dashboard', after=next_cursor) }}">Next grades</a>{% endif %}
+  </nav>
 </div>
 
 <div class="card">
   <h2>Grade detail (API)</h2>
   <p>Look up a single grade by its id.</p>
-  <input type="number" id="noteId" placeholder="note id"{% if notes %} value="{{ notes[0].id }}"{% endif %}>
-  <button onclick="loadNote()">Load</button>
+  <input type="number" id="noteId" min="1" max="2147483647" placeholder="note id"{% if notes %} value="{{ notes[0].id }}"{% endif %}>
+  <button id="loadNote" type="button">Load</button>
   <pre id="apiOut"></pre>
 </div>
 
-<script>
-  const TOKEN = {{ token|tojson }};
+<script nonce="{{ g.csp_nonce }}">
+  document.getElementById('loadNote').addEventListener('click', loadNote);
   async function loadNote() {
     const id = document.getElementById('noteId').value;
-    const res = await fetch('/api/notes/' + id, {
-      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    if (!/^[1-9][0-9]{0,9}$/.test(id)) {
+      document.getElementById('apiOut').textContent = 'Enter a valid note id.';
+      return;
+    }
+    const res = await fetch('/api/notes/' + encodeURIComponent(id), {
+      credentials: 'same-origin'
     });
     const data = await res.json();
     document.getElementById('apiOut').textContent = JSON.stringify(data, null, 2);

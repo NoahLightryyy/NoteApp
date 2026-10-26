@@ -2,6 +2,8 @@
 
 Submitted by **Lv Songyuan (2023901706)**. Reviewed 22 October 2026. This is an extract of the [complete report](README.md), assessing original commit `1c83e422429c4b784411701ffd797b5ab5f397dc`, not current main. Scores assume the original app is reachable by untrusted network clients with its default configuration known. See the complete report for diagrams, evidence limits, sources and AI contribution disclosure.
 
+P1 group: **Lv Songyuan (2023901706), Liu Yunfei (2023905324), Wu Siyuan (2023905932)**. Membership confirmed by the student on 26 October 2026. This fork is Lv Songyuan’s submission; there is no separate group repository. Other members’ approval or submission is not implied.
+
 ## Risk scoring method
 
 Risk = likelihood × impact, using ordinal scores from 1 to 5. Multiplication supports prioritization, not a numerical probability or expected financial loss. Related threats and attack chains are not added together.

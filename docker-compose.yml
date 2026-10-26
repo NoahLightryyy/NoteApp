@@ -1,40 +1,91 @@
+name: notesapp-coursework
 services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: notesapp
-      POSTGRES_USER: notesapp
-      POSTGRES_PASSWORD: notesapp_pg_pw_2024
+      POSTGRES_DB: ${NOTESAPP_DB_NAME:-notesapp}
+      POSTGRES_USER: notesapp_owner
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    secrets: [db_admin_password, db_password]
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "5432:5432"
+      - ./db/init.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
+      - ./db/20-app-role.sql:/docker-entrypoint-initdb.d/20-app-role.sql:ro
+      - ./db/30-audit.sql:/docker-entrypoint-initdb.d/30-audit.sql:ro
+    networks: [backend]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U notesapp -d notesapp"]
-      interval: 3s
+      test: [CMD-SHELL, 'pg_isready -U notesapp_owner -d "$${POSTGRES_DB}"']
+      interval: 2s
       timeout: 3s
-      retries: 20
-
+      retries: 40
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
   web:
-    build: ./web
+    build:
+      context: .
+      dockerfile: web/Dockerfile
     environment:
       DB_HOST: db
-      DB_NAME: notesapp
-      DB_USER: notesapp
-      POSTGRES_PASSWORD: notesapp_pg_pw_2024
-      JWT_SECRET: s3cr3t
-      SECRET_KEY: dev-session-key
-    ports:
-      - "8080:5000"
+      DB_NAME: ${NOTESAPP_DB_NAME:-notesapp}
+      DB_USER: notesapp_app
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      COMMENT_KEY_FILE: /run/secrets/comment_key
+      CSV_HMAC_KEY_FILE: /run/secrets/csv_hmac_key
+      SESSION_SECRET_FILE: /run/secrets/session_key
+      JWT_SECRET_FILE: /run/secrets/jwt_key
+      SESSION_COOKIE_SECURE: "true"
+    secrets: [db_password, comment_key, csv_hmac_key, session_key, jwt_key]
+    expose: ["5000"]
+    networks: [backend]
     depends_on:
       db:
         condition: service_healthy
-    # Flaw #13: the container runs as root (see Dockerfile) and mounts more than it
-    # needs - the host Docker socket and the whole project tree are exposed to it.
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 768m
+    cpus: 2.0
+    pids_limit: 128
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:5000/healthz', timeout=3)"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+    logging: *logging
+  nginx:
+    image: nginx:stable-alpine
+    environment:
+      NOTESAPP_HTTPS_PORT: ${NOTESAPP_HTTPS_PORT:-8443}
+    ports:
+      - "127.0.0.1:${NOTESAPP_HTTP_PORT:-8081}:80"
+      - "127.0.0.1:${NOTESAPP_HTTPS_PORT:-8443}:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - .:/host
-
+      - ./nginx/nginx.conf:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks: [backend, frontend]
+    depends_on:
+      web:
+        condition: service_healthy
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 1.0
+    pids_limit: 128
+    logging: *logging
+networks:
+  backend:
+    internal: true
+  frontend: {}
 volumes:
   pgdata:
+secrets:
+  db_admin_password: {file: ./.secrets/db_admin_password}
+  db_password: {file: ./.secrets/db_password}
+  comment_key: {file: ./.secrets/comment.key}
+  csv_hmac_key: {file: ./.secrets/csv_hmac.key}
+  session_key: {file: ./.secrets/session.key}
+  jwt_key: {file: ./.secrets/jwt.key}

@@ -1,202 +1,115 @@
 # NotesApp
 
-## Student information
+**Submission owner:** Lv Songyuan · **Student ID:** 2023901706
 
-- Name: Lv Songyuan
-- Student ID: 2023901706
+**P1 group:** Lv Songyuan (2023901706), Liu Yunfei (2023905324), Wu Siyuan (2023905932). This fork contains Lv Songyuan’s submission; the group has no separate repository.
 
-A small grades application used throughout the Computer Security course. Teachers
-record grades and comments for their classes, students read their own grades, and an
-admin manages users and classes.
+Computer Security coursework: a Flask/PostgreSQL application for student grades and teacher comments. The current revision brings the C3, C4 and Class 5 implementations into the root application. [Verification results](VERIFICATION.md) distinguish the current revision from the earlier, separately tested applications.
 
-## Submission map
+## Coursework and submission
 
-[Requirement-by-requirement audit and declared differences](SUBMISSION_STATUS.md).
+| Item | Where to review |
+|---|---|
+| P1 — threat model and risk analysis | [Report, diagrams, 17 scored STRIDE threats and Top 3 proposals](project1/README.md) · [requirement checklist](project1/SUBMISSION_CHECKLIST.md) |
+| C3 — AES-GCM comments | [Encryption](web/comment_crypto.py) in the [root application](web/app.py): encrypted storage, authorized reads and comment migration |
+| C4 — HMAC CSV export | [Signing and verification](web/csv_hmac.py) in the root application; altered exports must fail verification |
+| C5a — HTTPS | Default [Compose configuration](docker-compose.yml) and [nginx configuration](nginx/nginx.conf) |
+| C5b — Argon2 passwords | Root [login](web/app.py) and [password hashing](web/password_security.py); upgrade a legacy password after a successful login |
 
-| Course item | Implementation / deliverable | How to inspect or run |
-|---|---|---|
-| P1 — threat model | [Complete report](project1/README.md), [requirement check](project1/SUBMISSION_CHECKLIST.md) | Diagram, STRIDE, 17 scored threats, Top 3 fixes |
-| C3 — AES-GCM comments | [Comment encryption](session03/task3_notesapp/web/comment_crypto.py), [migration](session03/task3_notesapp/web/migrate_comments.py) | [Combined C3/C4/HTTPS lab](#session-03-authenticated-csv-exports); separate database |
-| C4 — HMAC CSV export | [Signing and verification](session03/task3_notesapp/web/csv_hmac.py), [export route](session03/task3_notesapp/web/app.py) | `signed=1` downloads CSV and HMAC; verifier rejects tampering |
-| C5a / Lab 1 — HTTPS | [Root nginx config](nginx/nginx.conf), [Compose overlay](docker-compose.https.yml) | [Root HTTPS instructions](#class-5-root-application-over-https) |
-| C5b / Lab 2 — Argon2 | [Root login](web/app.py), [hashing](web/password_security.py), [upgrade test](web/test_login_upgrade.py) | [Password checks](#coursework-submissions) |
+[Submission status](SUBMISSION_STATUS.md) records the requirement sources and delivery facts. The student confirmed privately sending the latest Lab 1 and Lab 2 reports, with both partners' names and IDs, to the instructor. Those reports are not republished here. P1 assesses the original course commit `1c83e42`; later implementation changes do not rewrite that historical assessment.
 
-Lab 1 and Lab 2 findings reports were sent directly to the instructor, as confirmed by the student. This repository provides their code. The separate `session03/task3_notesapp` app contains C3/C4 and its own HTTPS configuration; root `web/` is the Class 5 login-upgrade implementation. Running the root app alone does not enable C3/C4. Both paths are retained so the course baseline, later exercises and reported experiments remain distinguishable.
+## Start the application
 
-## Run the root application over HTTP
+Prerequisites: Docker with Compose **2.24 or newer**, Python **3.9 or newer**, and OpenSSL available on the host. `curl` is optional for manual HTTP/TLS checks. Run commands from the repository root.
 
-You need Docker with the Compose plugin.
+The optional [Session 03 image and password exercises](session03/README.md#standalone-synthetic-exercises-tasks-1-and-2) use Python **3.11+** and their own listed dependencies.
 
-```
+```sh
 git clone https://github.com/NoahLightryyy/NoteApp.git notesapp
 cd notesapp
-docker compose up
+python3 scripts/setup_local.py
+docker compose up -d --build
 ```
 
-The first start builds the image, launches PostgreSQL, and loads the seed data
-automatically. When it is ready, open:
+Open **[https://localhost:8443](https://localhost:8443)**. The HTTP entry at [http://localhost:8081](http://localhost:8081) redirects to HTTPS. The default configuration does not publish Flask or PostgreSQL directly.
 
-```
-http://localhost:8080
-```
+The generated localhost certificate is self-signed, so a browser trust warning is expected. Setup does not change the system trust store. TLS files stay in `nginx/certs/`; application and database secrets stay in `.secrets/`. Both directories are Git-ignored. Preserve the comment-encryption key together with the database: generating a replacement key cannot recover existing ciphertext.
 
-## Class 5 root application over HTTPS
-
-Docker Compose 2.24.0 or newer is needed for `!reset`, which removes the base HTTP port mapping. From this repository after cloning:
+The Compose project is `notesapp-coursework`, with a new independent database volume. Earlier `noteapp` and `notesapp-session03` volumes are preserved; starting this revision does not import their data. If an older application already uses ports 8443/8081, choose free ports instead of stopping it:
 
 ```sh
-python3 nginx/create_tls_cert.py
-docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build
-curl --cacert nginx/certs/notesapp.crt https://localhost/healthz
+export NOTESAPP_HTTPS_PORT=9443 NOTESAPP_HTTP_PORT=9081
+docker compose up -d --build
 ```
 
-Open `https://localhost`. Port 80 redirects to HTTPS; the Flask port is not published by this overlay. The generated localhost certificate is self-signed: the browser warning is expected until you explicitly trust it for local testing. The generator preserves an existing certificate/key pair and does not change system trust. Certificates and private keys are not committed.
+Then open `https://localhost:9443`. Keep the same environment values when rebuilding that deployment. For a manual TLS check, use its actual port:
 
-The plain-HTTP command above is retained for the Lab 1 before/after comparison. For the HTTPS implementation use both Compose files shown here. The original application retains other deliberate course vulnerabilities; HTTPS does not fix those.
+```sh
+curl --cacert nginx/certs/notesapp.crt "https://localhost:${NOTESAPP_HTTPS_PORT:-8443}/healthz"
+```
 
-## Test accounts
-
-| Role    | Username      | Password   |
-|---------|---------------|------------|
-| Student | `alice`       | `alicepw`  |
+| Role | Username | Demo password |
+|---|---|---|
+| Student | `alice` | `alicepw` |
 | Teacher | `prof.turing` | `teach123` |
-| Admin   | `admin`       | `admin123` |
+| Administrator | `admin` | `admin123` |
 
-(There are ~30 students in total; each student's password is their username + `pw`,
-e.g. `bob` / `bobpw`.)
+These are public course accounts for local exercises. The other seeded students use their username followed by `pw`.
 
-## Stack
+**Log out all sessions** ends the account's sessions on every browser and invalidates its previously issued API tokens. Each subsequent authenticated request checks the account's current authentication version in PostgreSQL; logging in again creates credentials for the new version.
 
-- Python 3.11 + Flask (server-rendered Jinja2 pages and a small JSON API)
-- PostgreSQL 15
-- Docker Compose (`web` and `db` services)
+Grade and account lists use pages of 100 records. CSV exports accept up to 1,000 records and reject an oversized result instead of returning an incomplete file; use a course-specific export when needed. Course/student selectors accept up to 1,000 entries. These limits keep the classroom application bounded.
 
-## Reset
+Sensitive reads and changes are recorded in the separate `notesapp_audit` database schema. The application can append events and read history, but cannot edit or delete existing events. Grade and account changes commit together with their audit record; an audit storage failure rejects the operation. The record contains actor, action, target, outcome and time, with grade changes but no passwords or comment text. Database administrators remain trusted; this local log is not an external archive.
 
-```
-docker compose down -v   # wipes the database volume
-docker compose up        # reloads the seed data
+## Verify a fresh deployment
+
+```sh
+python3 scripts/verify.py
 ```
 
-## Updating your fork
+The verifier uses an isolated temporary Compose project and test database, then cleans up its test volumes. It prints the result and saves a JSON record to the Git-ignored `.verification/latest.json`; `--report PATH` selects another report location. See [VERIFICATION.md](VERIFICATION.md) for the tested revision, results and limitations. A test pass does not establish instructor acceptance or the absence of every vulnerability; [SECURITY_STATUS.md](SECURITY_STATUS.md) tracks the security checks separately.
 
-The course repository is sometimes updated. Your fork does **not** update by itself.
-To pull the latest changes into your fork:
+To verify a signed export downloaded from the teacher page, run the following command with the archive's actual location and the key belonging to that deployment:
 
-**Easiest (GitHub website):** open your fork, and if it says *"This branch is behind
-KristenPire/NoteApp"*, click **Sync fork → Update branch**. Then, in your local clone:
-
+```sh
+python3 web/csv_hmac.py ~/Downloads/grades-signed.zip --key .secrets/csv_hmac.key
 ```
+
+Trust the CSV only after `OK: CSV HMAC-SHA256 verified.` A changed CSV or a different deployment's key must fail verification. The key is local secret material; do not include it in a submission or share it with the export.
+
+## HTTP capture exercise
+
+Use this only when reproducing the Class 5 plaintext-traffic comparison:
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.http-lab.yml up -d --build
+```
+
+The experiment enables **[http://localhost:8080](http://localhost:8080)** on loopback. HTTPS on port 8443 remains available, but the experiment also exposes a plaintext path; it must not be described as an HTTPS-only deployment.
+
+After the capture, restore the default configuration:
+
+```sh
+docker compose up -d --build
+```
+
+## Update, stop and existing data
+
+To update and rebuild the default HTTPS deployment:
+
+```sh
 git pull
+python3 scripts/setup_local.py
+docker compose up -d --build
 ```
 
-**Command line (keeps your own commits):**
-
-```
-git remote add upstream https://github.com/KristenPire/NoteApp.git   # once
-git fetch upstream
-git merge upstream/main
-git push
-```
-
-Then **rebuild**, because the app code is baked into the Docker image:
-
-```
-docker compose up --build
-```
-
-A plain `docker compose up` would keep running the old image.
-
-## Session 03: encrypted comments (C3)
-
-The C3 app is `session03/task3_notesapp`. It stores each non-null `notes.comment` as a `gcm1:` envelope containing a fresh 12-byte random nonce and AES-256-GCM ciphertext plus authentication tag. The note ID is authenticated as associated data, so moving a valid ciphertext to another record fails verification. The 32-byte key is generated locally and mounted as a Docker secret, outside PostgreSQL and Git.
-
-On startup, `migrate_comments.py` atomically encrypts existing plaintext comments. A rerun verifies existing ciphertext and preserves it. Teacher writes encrypt before storage; dashboard, API, teacher views and CSV exports decrypt on read. Use the setup commands in the following section to generate keys and certificates and start the combined app. Verify the complete C3/C4 flow with:
+To stop it while retaining the database and local keys:
 
 ```sh
-docker compose -f session03/task3_notesapp/compose.yaml exec -T web python - < session03/task3_notesapp/test_routes.py
+docker compose down
 ```
 
-This integration test temporarily updates and inserts course test records, restores them afterward, and verifies that tampered ciphertext is rejected.
+Do not delete an old database volume or encryption key to perform an upgrade. This revision starts a new course database and does not merge or migrate the two older deployments. Reusing their data requires a separately agreed backup and import procedure that preserves the corresponding comment key. No automatic adoption command is provided here.
 
-## Session 03: authenticated CSV exports
-
-The encrypted-comments version in `session03/task3_notesapp` exports CSV with
-HMAC-SHA256 authentication. HMAC detects changes; it does not encrypt the CSV.
-The teacher's export link downloads `grades.zip`, containing `grades.csv` and
-`grades.csv.hmac`. The signature covers the exact UTF-8 CSV bytes, including
-line endings. Opening and saving the CSV in a spreadsheet may invalidate it.
-
-Create the independent 32-byte HMAC key (existing keys are preserved), then rebuild:
-
-```sh
-python3 session03/task3_notesapp/create_key.py
-python3 session03/task3_notesapp/create_tls_cert.py
-docker compose -f session03/task3_notesapp/compose.yaml up -d --build
-```
-
-Verify a downloaded ZIP locally, without extra Python dependencies:
-
-```sh
-python3 session03/task3_notesapp/web/csv_hmac.py ~/Downloads/grades.zip --key session03/task3_notesapp/secrets/csv_hmac.key
-```
-
-Verification exits with status 0 on success and 1 on failure. Keep the key private
-and backed up; anyone with the key can also create valid signatures. The key is
-mounted as a Docker secret and is never included in the export. Retain the old key
-if you rotate it and need to verify old exports.
-
-Direct `/export.csv` requests still return CSV, with a hexadecimal signature in
-`X-CSV-HMAC-SHA256`. Add `signed=1` to download the ZIP with its signature file.
-
-Run the standalone signature tests:
-
-```sh
-python3 -m unittest discover -s session03/task3_notesapp -p test_csv_hmac.py
-```
-
-### Session 03 HTTPS
-
-Open https://localhost:8443. The old http://localhost:8081 address redirects to
-HTTPS. Nginx accepts TLS 1.2/1.3; Flask has no published host port and its session
-cookie uses Secure, HttpOnly and SameSite=Lax. HMAC exports work over HTTPS.
-
-The generated localhost certificate is self-signed: browsers will report it as
-untrusted until you explicitly trust this local certificate. The setup does not
-modify your system trust store. For a public deployment, replace it with a
-trusted certificate for your domain and update the nginx hostname and redirect.
-This remains a teaching app with other deliberately insecure features.
-
-Check TLS with the generated certificate (without disabling verification):
-
-```sh
-curl --cacert session03/task3_notesapp/secrets/tls/localhost.crt https://localhost:8443/healthz
-```
-
-TLS configuration reference: https://nginx.org/en/docs/http/configuring_https_servers.html
-
-## Coursework submissions
-
-- **P1:** [Threat model, diagrams, STRIDE analysis and Top 3 fixes](project1/README.md), submitted by Lv Songyuan (2023901706). The report assesses the original course commit, before these lab fixes.
-- **C3 / C4 / C5a:** Comment encryption, HMAC CSV exports and nginx HTTPS are in `session03/task3_notesapp` (instructions above).
-- **C5b:** Both `web/` and `session03/task3_notesapp/web/` use Argon2id for passwords. Login fetches the username with a bound SQL parameter and refreshes outdated hash parameters after successful verification. In the root `web/` application, an existing plaintext password is upgraded only after a correct login; a wrong password leaves storage unchanged. Startup does not bulk-migrate root application accounts. Admin-created users and database seeds store salted hashes.
-
-Argon2id uses 64 MiB memory, 3 iterations, 4 lanes and a fresh random salt per password, via [argon2-cffi](https://argon2-cffi.readthedocs.io/en/stable/api.html). Passwords are hashed, not reversibly encrypted. The documented demo credentials still work.
-
-Rebuild the application to load changes. Do not delete the data volume to upgrade. The separate `session03/task3_notesapp` copy retains its earlier startup bulk-migration behavior; the Class 5 upgrade-on-login implementation is in root `web/`. For that separate combined HTTPS lab:
-
-```sh
-docker compose -f session03/task3_notesapp/compose.yaml up -d --build
-docker compose -f session03/task3_notesapp/compose.yaml exec -T web python test_passwords.py
-python3 session03/task3_notesapp/test_https.py
-```
-
-For the root application, rebuild using your existing Compose configuration, then run:
-
-```sh
-docker compose exec -T web python test_login_upgrade.py
-docker compose exec -T web python test_alice_login_upgrade.py
-docker compose exec -T web python test_passwords.py
-```
-
-The login-upgrade test uses a transaction that is rolled back and checks that incorrect legacy credentials do not modify storage, a correct login upgrades the password, and subsequent logins verify the hash. The broader password test checks salts, account creation, demo logins and parameter rehashing using temporary accounts that are removed afterward. Existing accounts already migrated in earlier work stay hashed; their later logins do not demonstrate a new plaintext-to-hash transition. Other deliberately insecure course features remain.
+The old `session03/task3_notesapp` path is retained as a compatibility entry point for the root application, rather than a second application implementation. See [Session 03 notes](session03/README.md). Earlier code and experiment history remain available in Git.

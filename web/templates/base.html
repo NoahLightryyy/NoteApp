@@ -9,12 +9,15 @@
 <body>
   <header class="topbar">
     <a class="brand" href="{{ url_for('index') }}">NotesApp</a>
-    {% if session.get('user_id') %}
+    {% if g.identity %}
       <span class="who">
-        {{ session.get('username') }}
-        <span class="badge badge-{{ session.get('role') }}">{{ session.get('role') }}</span>
+        {{ g.identity.username }}
+        <span class="badge badge-{{ g.identity.role }}">{{ g.identity.role }}</span>
       </span>
-      <a class="logout" href="{{ url_for('logout') }}">Log out</a>
+      <form method="post" action="{{ url_for('logout') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="small">Log out all sessions</button>
+      </form>
     {% endif %}
   </header>
   <main class="content">

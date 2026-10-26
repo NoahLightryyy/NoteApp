@@ -2,7 +2,9 @@
 
 Submitted by: **Lv Songyuan** — Student ID: **2023901706**.
 
-Group source materials are credited below; this identifies the owner of this submission.
+**P1 group:** Lv Songyuan (2023901706), Liu Yunfei (2023905324), Wu Siyuan (2023905932).
+
+Group membership was confirmed by the student on 26 October 2026. There is no separate group repository; this fork contains Lv Songyuan’s submission. This identification does not claim that the other members have submitted or approved this revision. Group source materials are credited below.
 
 This assessment identifies threats to student grades, teacher comments, user identities and the NotesApp runtime. The highest-priority findings are login SQL injection, a published session-signing secret, and acceptance of forged API tokens. The group’s flow diagrams and 17-threat register are retained, with consistent references, risk estimates and proposed fixes.
 

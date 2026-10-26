@@ -7,7 +7,8 @@ CREATE TABLE users (
     id         SERIAL PRIMARY KEY,
     username   TEXT UNIQUE NOT NULL,
     password   TEXT NOT NULL,          -- Argon2id encoded hash (includes parameters and random salt)
-    role       TEXT NOT NULL,          -- 'student' | 'teacher' | 'admin'
+    auth_version INTEGER NOT NULL DEFAULT 0 CHECK (auth_version >= 0),
+    role       TEXT NOT NULL CHECK (role IN ('student', 'teacher', 'admin')),
     teacher_id INTEGER REFERENCES users(id)
 );
 
@@ -27,8 +28,8 @@ CREATE TABLE notes (
     id         SERIAL PRIMARY KEY,
     student_id INTEGER REFERENCES users(id),
     class_id   INTEGER REFERENCES classes(id),
-    grade      NUMERIC(4,1),
-    comment    TEXT                    -- rendered as rich text / unescaped (planted flaw #10)
+    grade      NUMERIC(4,1) CHECK (grade BETWEEN 0 AND 20),
+    comment    TEXT                    -- migrated to AES-GCM before the web server starts
 );
 
 -- admin (id 1)

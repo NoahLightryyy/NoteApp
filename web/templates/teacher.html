@@ -1,11 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-  <h1>Classes</h1>
+  <h1>Manage grades</h1>
+  <p>Only courses you are authorized to manage are shown.</p>
+  <p>Download the signed ZIP to keep the CSV together with its HMAC. Verify the archive using the command in the repository README before trusting its contents.</p>
+  <p>Each export contains at most 1,000 grades. If an export is too large, select an individual course.</p>
   <ul class="classes">
     {% for c in classes %}
     <li>{{ c.name }}
-      <a class="small" href="{{ url_for('export_csv') }}?class_id={{ c.id }}">export CSV</a>
+      <a class="small" href="{{ url_for('export_csv') }}?class_id={{ c.id }}&amp;signed=1">export CSV + HMAC (ZIP)</a>
     </li>
     {% endfor %}
   </ul>
@@ -14,8 +17,10 @@
 <div class="card">
   <h2>Add / update a grade</h2>
   <form method="post" action="{{ url_for('grades') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p>For an update, enter an existing note id; its student and course stay unchanged. For a new grade, choose a student enrolled in the selected course.</p>
     <label>Note id (leave empty to create)
-      <input type="text" name="note_id">
+      <input type="number" name="note_id" min="1" max="2147483647">
     </label>
     <label>Student
       <select name="student_id">
@@ -27,14 +32,14 @@
         {% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
       </select>
     </label>
-    <label>Grade <input type="text" name="grade"></label>
-    <label>Comment <textarea name="comment" rows="2"></textarea></label>
+    <label>Grade (0–20) <input type="number" name="grade" min="0" max="20" step="0.1" required></label>
+    <label>Comment <textarea name="comment" rows="2" maxlength="4000"></textarea></label>
     <button type="submit">Save</button>
   </form>
 </div>
 
 <div class="card">
-  <h2>All grades</h2>
+  <h2>Grades in your managed courses</h2>
   <table>
     <thead><tr><th>id</th><th>Student</th><th>Class</th><th>Grade</th><th>Comment</th></tr></thead>
     <tbody>
@@ -44,10 +49,14 @@
         <td>{{ n.student }}</td>
         <td>{{ n.class_name }}</td>
         <td>{{ n.grade }}</td>
-        <td>{% autoescape false %}{{ n.comment }}{% endautoescape %}</td>
+        <td>{{ n.comment or '' }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  <nav aria-label="Grade pages">
+    {% if after %}<a href="{{ url_for('teacher') }}">First page</a>{% endif %}
+    {% if next_cursor %}<a href="{{ url_for('teacher', after=next_cursor) }}">Next grades</a>{% endif %}
+  </nav>
 </div>
 {% endblock %}

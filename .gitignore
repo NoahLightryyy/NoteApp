@@ -18,3 +18,19 @@ session03/task3_notesapp/secrets/
 
 # Locally generated TLS certificate and private key
 nginx/certs/
+
+# Local setup, verification outputs and private report artifacts.
+.DS_Store
+.secrets/
+.verification/
+.local-backups/
+output/
+crack/leaked_users.txt
+crack/*result.json
+crack/*output.txt
+
+crack/results/
+session03/results/
+
+# Superseded personal run notes; use the checked-in session03/README.md.
+session03/RUN_ME.txt
